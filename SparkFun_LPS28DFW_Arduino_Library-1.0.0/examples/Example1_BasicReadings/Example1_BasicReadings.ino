@@ -1,5 +1,6 @@
-#include <Wire.h>
 #include "SparkFun_LPS28DFW_Arduino_Library.h"
+#include <Wire.h>
+
 
 // Create a new sensor object
 LPS28DFW pressureSensor;
