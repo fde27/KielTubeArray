@@ -734,6 +734,54 @@ int32_t lps28dfw_refp_get(stmdev_ctx_t *ctx, int16_t *val);
 int32_t lps28dfw_opc_set(stmdev_ctx_t *ctx, int16_t val);
 int32_t lps28dfw_opc_get(stmdev_ctx_t *ctx, int16_t *val);
 
+
+
+#define LPS28DFW_SEL_BY_HW          (lps28dfw_bus_mode_t::LPS28DFW_SEL_BY_HW)
+#define LPS28DFW_INT_PIN_ON_I3C     (lps28dfw_bus_mode_t::LPS28DFW_INT_PIN_ON_I3C)
+#define LPS28DFW_AUTO               (lps28dfw_bus_mode_t::LPS28DFW_AUTO)
+#define LPS28DFW_ALWAYS_ON          (lps28dfw_bus_mode_t::LPS28DFW_ALWAYS_ON)
+#define LPS28DFW_BUS_AVB_TIME_50us  (lps28dfw_bus_mode_t::LPS28DFW_BUS_AVB_TIME_50us)
+#define LPS28DFW_BUS_AVB_TIME_2us   (lps28dfw_bus_mode_t::LPS28DFW_BUS_AVB_TIME_2us)
+#define LPS28DFW_BUS_AVB_TIME_1ms   (lps28dfw_bus_mode_t::LPS28DFW_BUS_AVB_TIME_1ms)
+#define LPS28DFW_BUS_AVB_TIME_25ms  (lps28dfw_bus_mode_t::LPS28DFW_BUS_AVB_TIME_25ms)
+#define LPS28DFW_DRV_RDY            (lps28dfw_init_t::LPS28DFW_DRV_RDY)
+#define LPS28DFW_BOOT               (lps28dfw_init_t::LPS28DFW_BOOT)
+#define LPS28DFW_RESET              (lps28dfw_init_t::LPS28DFW_RESET)
+#define LPS28DFW_1260hPa            (lps28dfw_md_t::LPS28DFW_1260hPa)
+#define LPS28DFW_4000hPa            (lps28dfw_md_t::LPS28DFW_4000hPa)
+#define LPS28DFW_ONE_SHOT           (lps28dfw_md_t::LPS28DFW_ONE_SHOT)
+#define LPS28DFW_1Hz                (lps28dfw_md_t::LPS28DFW_1Hz)
+#define LPS28DFW_4Hz                (lps28dfw_md_t::LPS28DFW_4Hz)
+#define LPS28DFW_10Hz               (lps28dfw_md_t::LPS28DFW_10Hz)
+#define LPS28DFW_25Hz               (lps28dfw_md_t::LPS28DFW_25Hz)
+#define LPS28DFW_50Hz               (lps28dfw_md_t::LPS28DFW_50Hz)
+#define LPS28DFW_75Hz               (lps28dfw_md_t::LPS28DFW_75Hz)
+#define LPS28DFW_100Hz              (lps28dfw_md_t::LPS28DFW_100Hz)
+#define LPS28DFW_200Hz              (lps28dfw_md_t::LPS28DFW_200Hz)
+#define LPS28DFW_4_AVG              (lps28dfw_md_t::LPS28DFW_4_AVG)
+#define LPS28DFW_8_AVG              (lps28dfw_md_t::LPS28DFW_8_AVG)
+#define LPS28DFW_16_AVG             (lps28dfw_md_t::LPS28DFW_16_AVG)
+#define LPS28DFW_32_AVG             (lps28dfw_md_t::LPS28DFW_32_AVG)
+#define LPS28DFW_64_AVG             (lps28dfw_md_t::LPS28DFW_64_AVG)
+#define LPS28DFW_128_AVG            (lps28dfw_md_t::LPS28DFW_128_AVG)
+#define LPS28DFW_256_AVG            (lps28dfw_md_t::LPS28DFW_256_AVG)
+#define LPS28DFW_512_AVG            (lps28dfw_md_t::LPS28DFW_512_AVG)
+#define LPS28DFW_LPF_DISABLE        (lps28dfw_md_t::LPS28DFW_LPF_DISABLE)
+#define LPS28DFW_LPF_ODR_DIV_4      (lps28dfw_md_t::LPS28DFW_LPF_ODR_DIV_4)
+#define LPS28DFW_LPF_ODR_DIV_9      (lps28dfw_md_t::LPS28DFW_LPF_ODR_DIV_9)
+#define LPS28DFW_BYPASS             (lps28dfw_fifo_md_t::LPS28DFW_BYPASS)
+#define LPS28DFW_FIFO               (lps28dfw_fifo_md_t::LPS28DFW_FIFO)
+#define LPS28DFW_STREAM             (lps28dfw_fifo_md_t::LPS28DFW_STREAM)
+#define LPS28DFW_STREAM_TO_FIFO     (lps28dfw_fifo_md_t::LPS28DFW_STREAM_TO_FIFO)
+#define LPS28DFW_BYPASS_TO_STREAM   (lps28dfw_fifo_md_t::LPS28DFW_BYPASS_TO_STREAM)
+#define LPS28DFW_BYPASS_TO_FIFO     (lps28dfw_fifo_md_t::LPS28DFW_BYPASS_TO_FIFO)
+#define LPS28DFW_OUT_AND_INTERRUPT  (lps28dfw_ref_md_t::LPS28DFW_OUT_AND_INTERRUPT)
+#define LPS28DFW_ONLY_INTERRUPT     (lps28dfw_ref_md_t::LPS28DFW_ONLY_INTERRUPT)
+#define LPS28DFW_RST_REFS           (lps28dfw_ref_md_t::LPS28DFW_RST_REFS)
+
+
+
+
 /**
   *@}
   *
