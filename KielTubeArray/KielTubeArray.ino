@@ -63,21 +63,12 @@ void setup() {
   Wire2.begin();
   Wire2.setClock(400000);
 
-  // // Check first sensor is online
-  // TCA9548A1(0, multi_addr[0]);
-  // while(pressureSensor[0].begin(i2cAddress) != LPS28DFW_OK) {
-  //   Serial.println("Error: LPS28DFW not connected, check wiring and I2C address!");
-  //   delay(1000);
-  // }
-  // TCA9548A1_DEFAULT(multi_addr[0]);   // Deactivate all sensors on multiplexer
-  // delay(500);
-
   // Setup sensors
   lps28dfw_md_t modeConfig =
   {
       .fs  = LPS28DFW_1260hPa,    // Full scale range
-      .odr = LPS28DFW_25Hz,      // Output data rate
-      .avg = LPS28DFW_512_AVG,      // Average filter
+      .odr = LPS28DFW_25Hz,       // Output data rate
+      .avg = LPS28DFW_512_AVG,    // Average filter
       .lpf = LPS28DFW_LPF_DISABLE // Low-pass filter
   };
 
@@ -128,18 +119,16 @@ void setup() {
 
 
 void loop() {
-  for (uint8_t sensor = 0; sensor < num_sens[0]; sensor++) {
-    TCA9548A1(sensor, multi_addr[0]);
+  for (uint8_t sensor = 0; sensor < num_sens[2]; sensor++) {
+    TCA9548A1(sensor, multi_addr[2]);
     pressureSensor[sensor].getSensorData();
     float reading = pressureSensor[sensor].data.pressure.hpa;
-    // Serial.print("Sensor: ");
-    // Serial.print(sensor);
-    // Serial.print(": ");
-    // Serial.print(reading*100);
-    // Serial.print("   ");
+    int reading_int = reading*100;
+    Serial.print(reading_int);
+    Serial.print("\t");
   }
-  delay(35);
-  // Serial.println("");
+  Serial.println();
+  delay(50);
 }
 
 
