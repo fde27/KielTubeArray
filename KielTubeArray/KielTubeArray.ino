@@ -17,7 +17,6 @@ uint8_t num_sens[] = {8, 8, 6};
 
 LPS28DFW pressureSensor[NUM_SENSORS];
 
-
 // Select desired sensor (1st I2C bus)
 void TCA9548A1(uint8_t bus, uint8_t multiplexer){
   Wire.beginTransmission(multiplexer);  // Multiplexer address on the I2C bus
@@ -32,26 +31,10 @@ void TCA9548A1_DEFAULT(uint8_t multiplexer){
   Wire.endTransmission();
 }
 
-// // Select desired sensor (2nd I2C bus)
-// void TCA9548A2(uint8_t bus, uint8_t multiplexer){
-//   Wire1.beginTransmission(multiplexer);  
-//   Wire1.write(1 << bus);          
-//   Wire1.endTransmission();
-// }
-
-// // Select desired sensor (3rd I2C bus)
-// void TCA9548A3(uint8_t bus, uint8_t multiplexer){
-//   Wire2.beginTransmission(multiplexer);  
-//   Wire2.write(1 << bus);          
-//   Wire2.endTransmission();
-// }
-
-
-
-
 void setup() {
   Serial.begin(115200);
-  Serial.println("Starting Serial");
+  while (!Serial);
+  Serial.println("Serial started");
 
   // Start I2C buses
   Wire.begin();
@@ -62,6 +45,19 @@ void setup() {
 
   Wire2.begin();
   Wire2.setClock(400000);
+
+  uint8_t initWireSelect = 0; // Set the common value to be passed
+
+  // // Initialize each instance with the same value
+  // for (int i = 0; i < NUM_SENSORS; i++) {
+  //     pressureSensor[i] = LPS28DFW(initWireSelect); // Pass the same value to all instances
+  // }
+
+  // for (uint8_t multi = 0; multi < NUM_MULTI; multi++) {
+  //   TCA9548A1_DEFAULT(multi_addr[multi]);   // Deactivate all sensors on multiplexer
+  // }
+  scanI2C();
+
 
   // Setup sensors
   lps28dfw_md_t modeConfig =
@@ -119,17 +115,23 @@ void setup() {
 
 
 void loop() {
-  for (uint8_t sensor = 0; sensor < num_sens[2]; sensor++) {
-    TCA9548A1(sensor, multi_addr[2]);
-    pressureSensor[sensor].getSensorData();
-    float reading = pressureSensor[sensor].data.pressure.hpa;
-    int reading_int = reading*100;
-    Serial.print(reading_int);
-    Serial.print("\t");
-  }
-  Serial.println();
-  delay(50);
+  // for (uint8_t sensor = 0; sensor < num_sens[1]; sensor++) {
+  //   TCA9548A1(sensor, multi_addr[1]);
+  //   pressureSensor[sensor].getSensorData();
+  //   float reading = pressureSensor[sensor].data.pressure.hpa;
+  //   int reading_int = reading*100;
+  //   Serial.print(reading_int);
+  //   Serial.print("\t");
+  // }
+  // Serial.println();
+  // delay(1000);
 }
+
+
+
+
+
+
 
 
 
@@ -165,3 +167,18 @@ void scanI2C() {
         Serial.println("Scan complete.");
     }
 }
+
+
+// // Select desired sensor (2nd I2C bus)
+// void TCA9548A2(uint8_t bus, uint8_t multiplexer){
+//   Wire1.beginTransmission(multiplexer);  
+//   Wire1.write(1 << bus);          
+//   Wire1.endTransmission();
+// }
+
+// // Select desired sensor (3rd I2C bus)
+// void TCA9548A3(uint8_t bus, uint8_t multiplexer){
+//   Wire2.beginTransmission(multiplexer);  
+//   Wire2.write(1 << bus);          
+//   Wire2.endTransmission();
+// }

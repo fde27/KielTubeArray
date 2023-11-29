@@ -1,8 +1,9 @@
 #include "SparkFun_LPS28DFW_Arduino_Library.h"
 
 /// @brief Default constructor
-LPS28DFW::LPS28DFW()
+LPS28DFW::LPS28DFW(uint8_t initWireSelect)
 {
+    wireSelect = initWireSelect;
     // Set sensor helper fucntions
     sensor.read_reg = readRegisters;
     sensor.write_reg = writeRegisters;
@@ -14,18 +15,34 @@ LPS28DFW::LPS28DFW()
     sensor.handle = &interfaceData;
 }
 
+
 /// @brief Begin communication with the sensor over I2C
 /// @param address I2C address of sensor
 /// @param wirePort I2C port to use for communication, defaults to Wire
 /// @return Error code. 0 means success, negative means failure
-int32_t LPS28DFW::begin(uint8_t address, TwoWire& wirePort)
+int32_t LPS28DFW::begin(uint8_t address, TwoWire& wirePort, uint8_t wireSelect)
 {
     // Variable to track errors returned by API calls
     int32_t err = LPS28DFW_OK;
 
+    Serial.print("Wire select: ");
+    Serial.println(wireSelect);
+
     // Set interface parameters as requested
     interfaceData.i2cAddress = address;
     interfaceData.i2cPort = &wirePort;
+
+    // TwoWire* wirePort;
+
+    // if (wireSelect == 0) {
+    //   wirePort = &Wire;
+    // } else if (wireSelect == 1) {
+    //   wirePort = &Wire1;
+    // } else if (wireSelect == 2) {
+    //   wirePort = &Wire2;
+    // } else {
+    //   Serial.println("incorrect wireInit parameter!");
+    // }
 
     // Check whether the sensor is actually connected
     lps28dfw_id_t chipID;

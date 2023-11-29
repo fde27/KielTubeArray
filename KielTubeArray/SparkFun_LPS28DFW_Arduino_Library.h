@@ -72,11 +72,12 @@ struct LPS28DFW_InterfaceData
 class LPS28DFW
 {
     public:
+        uint8_t wireSelect;
         // Constructor
-        LPS28DFW();
+        LPS28DFW(uint8_t initWireSelect = 0);
 
         // Sensor initialization, must specify communication interface
-        int32_t begin(uint8_t address = LPS28DFW_I2C_ADDRESS_DEFAULT, TwoWire& wirePort = Wire);
+        int32_t begin(uint8_t address = LPS28DFW_I2C_ADDRESS_DEFAULT, TwoWire& wirePort = Wire, uint8_t wireSelect = 0);
 
         // Configuration control
         int32_t init();
