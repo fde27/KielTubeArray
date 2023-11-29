@@ -8,12 +8,12 @@
 #include "SparkFun_LPS28DFW_Arduino_Library.h"
 
 // Addresses of the multiplexer for each I2C bus (manually selectable with 0 ohm resistors A0, A1, A2)
-#define MULTIPLEXER1_ADDR (0x70)
-#define MULTIPLEXER2_ADDR (0x71)
-#define MULTIPLEXER3_ADDR (0x72)
-#define NUM_SENSORS (8)
+#define NUM_MULTI (3)
+#define NUM_SENSORS (24)
 
 uint8_t i2cAddress = LPS28DFW_I2C_ADDRESS_DEFAULT; // 0x5C
+uint8_t multi_addr[] = {0x70, 0x75, 0x72, 0x70, 0x71, 0x72, 0x70, 0x71};
+uint8_t num_sens[] = {8, 8, 6};
 
 LPS28DFW pressureSensor[NUM_SENSORS];
 
@@ -22,6 +22,13 @@ LPS28DFW pressureSensor[NUM_SENSORS];
 void TCA9548A1(uint8_t bus, uint8_t multiplexer){
   Wire.beginTransmission(multiplexer);  // Multiplexer address on the I2C bus
   Wire.write(1 << bus);          // Send byte to selected multiplexer to select desired pressure sensor
+  Wire.endTransmission();
+}
+
+// Set to default state
+void TCA9548A1_DEFAULT(uint8_t multiplexer){
+  Wire.beginTransmission(multiplexer);  // Multiplexer address on the I2C bus
+  Wire.write(0);         
   Wire.endTransmission();
 }
 
@@ -48,63 +55,124 @@ void setup() {
 
   // Start I2C buses
   Wire.begin();
+  Wire.setClock(400000);
 
-  // Check first sensor is online
-  TCA9548A1(0, MULTIPLEXER1_ADDR);
-  while(pressureSensor[0].begin(i2cAddress) != LPS28DFW_OK) {
-    Serial.println("Error: LPS28DFW not connected, check wiring and I2C address!");
-    delay(1000);
-  }
+  Wire1.begin();
+  Wire1.setClock(400000);
+
+  Wire2.begin();
+  Wire2.setClock(400000);
+
+  // // Check first sensor is online
+  // TCA9548A1(0, multi_addr[0]);
+  // while(pressureSensor[0].begin(i2cAddress) != LPS28DFW_OK) {
+  //   Serial.println("Error: LPS28DFW not connected, check wiring and I2C address!");
+  //   delay(1000);
+  // }
+  // TCA9548A1_DEFAULT(multi_addr[0]);   // Deactivate all sensors on multiplexer
+  // delay(500);
 
   // Setup sensors
   lps28dfw_md_t modeConfig =
   {
       .fs  = LPS28DFW_1260hPa,    // Full scale range
       .odr = LPS28DFW_25Hz,      // Output data rate
-      .avg = LPS28DFW_4_AVG,      // Average filter
-      .lpf = LPS28DFW_LPF_ODR_DIV_9 // Low-pass filter
+      .avg = LPS28DFW_512_AVG,      // Average filter
+      .lpf = LPS28DFW_LPF_DISABLE // Low-pass filter
   };
 
   lps28dfw_ref_md_t refConfig =
   {
-      .apply_ref = LPS28DFW_OUT_AND_INTERRUPT,
+      .apply_ref = LPS28DFW_RST_REFS,
       .get_ref = true
   };
 
-  Serial.println("Reference pressures:");
-  delay(500);
-  for (uint8_t sensor = 0; sensor < NUM_SENSORS; sensor++) {
-    TCA9548A1(sensor, MULTIPLEXER1_ADDR);
-    pressureSensor[sensor].setModeConfig(&modeConfig);
-    pressureSensor[sensor].setReferenceMode(&refConfig);
-    // Get reference pressure
-    int16_t refPressureRaw = 0;
-    pressureSensor[sensor].getReferencePressure(&refPressureRaw);
-    float refPressureHPa = (refPressureRaw / 16.0)*100; // Divide by 16 in 1260hPa range, convert to Pa
-    Serial.print("Sensor: ");
-    Serial.print(sensor);
-    Serial.print(": ");
-    Serial.print(refPressureHPa);
-    Serial.print("   ");
-  }
+
+  uint8_t offset = 0;
+  for (uint8_t multi = 0; multi < NUM_MULTI; multi++) {  // Cycle through multiplexers on bus
+    Serial.print("Reference pressures (");
+    Serial.print(multi);
+    Serial.println("):");
+
+    for (uint8_t sensor = 0; sensor < num_sens[multi]; sensor++) {  // Cycle through sensors on multiplexer
+      // Select sensor
+      TCA9548A1(sensor, multi_addr[multi]);
+      delay(5);
+
+      // Set config
+      pressureSensor[sensor+offset].setModeConfig(&modeConfig);
+      pressureSensor[sensor+offset].setReferenceMode(&refConfig);
+
+      // Get reference pressure
+      int16_t refPressureRaw = 0;
+      pressureSensor[sensor+offset].getReferencePressure(&refPressureRaw);
+      float refPressureHPa = (refPressureRaw / 16.0)*100; // Divide by 16 in 1260hPa range, convert to Pa
+
+      // Print ref. pressure
+      Serial.print("Sensor: ");
+      Serial.print(sensor+offset);
+      Serial.print(": ");
+      Serial.print(refPressureHPa);
+      Serial.print("   ");
+
+      TCA9548A1_DEFAULT(multi_addr[multi]);   // Deactivate all sensors on multiplexer
+    }
   Serial.println("");
+  offset += num_sens[multi];              // Used to keep track of pressureSensor instances
+  }
 
   
 
   Serial.println("Done setting up");
 }
 
+
 void loop() {
-  for (uint8_t sensor = 0; sensor < NUM_SENSORS; sensor++) {
-    TCA9548A1(sensor, MULTIPLEXER1_ADDR);
+  for (uint8_t sensor = 0; sensor < num_sens[0]; sensor++) {
+    TCA9548A1(sensor, multi_addr[0]);
     pressureSensor[sensor].getSensorData();
     float reading = pressureSensor[sensor].data.pressure.hpa;
-    Serial.print("Sensor: ");
-    Serial.print(sensor);
-    Serial.print(": ");
-    Serial.print(reading*100);
-    Serial.print("   ");
+    // Serial.print("Sensor: ");
+    // Serial.print(sensor);
+    // Serial.print(": ");
+    // Serial.print(reading*100);
+    // Serial.print("   ");
   }
-  Serial.println("");
-  delay(40);
+  delay(35);
+  // Serial.println("");
+}
+
+
+
+
+
+
+void scanI2C() {
+    byte error, address;
+    int deviceCount = 0;
+
+    Serial.println("Scanning...");
+
+    for (address = 1; address < 127; address++) {
+        Wire.beginTransmission(address);
+        error = Wire.endTransmission();
+
+        if (error == 0) {
+            Serial.print("I2C device found at address 0x");
+            if (address < 16) Serial.print("0");
+            Serial.print(address, HEX);
+            Serial.println(" !");
+            deviceCount++;
+        } else if (error == 4) {
+            Serial.print("Unknown error at address 0x");
+            if (address < 16) Serial.print("0");
+            Serial.println(address, HEX);
+        }
+    }
+
+    if (deviceCount == 0) {
+        Serial.println("No I2C devices found.");
+    } else {
+        Serial.println("Scan complete.");
+    }
 }
