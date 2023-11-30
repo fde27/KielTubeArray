@@ -1,5 +1,5 @@
-#ifndef __SPARKFUN_LPS28DFW_H__
-#define __SPARKFUN_LPS28DFW_H__
+#ifndef __SPARKFUN_LPS28DFW_W1_H__
+#define __SPARKFUN_LPS28DFW_W1_H__
 
 #include "Arduino.h"
 #include <Wire.h>
@@ -62,21 +62,21 @@
 #define LPS28DFW_RST_REFS           (lps28dfw_ref_md_t::LPS28DFW_RST_REFS)
 
 // Struct to hold data about the communication interface being used (I2C or SPI)
-struct LPS28DFW_InterfaceData
+struct LPS28DFW_W1_InterfaceData
 {
     // I2C settings
     uint8_t i2cAddress;
     TwoWire* i2cPort;
 };
 
-class LPS28DFW
+class LPS28DFW_W1
 {
     public:
         // Constructor
-        LPS28DFW();
+        LPS28DFW_W1();
 
         // Sensor initialization, must specify communication interface
-        int32_t begin(uint8_t address = LPS28DFW_I2C_ADDRESS_DEFAULT, TwoWire& wirePort = Wire);
+        int32_t begin(uint8_t address = LPS28DFW_I2C_ADDRESS_DEFAULT, TwoWire& wirePort = Wire1);
 
         // Configuration control
         int32_t init();
@@ -121,7 +121,7 @@ class LPS28DFW
         stmdev_ctx_t sensor;
 
         // Information about the selected communication interface (I2C)
-        LPS28DFW_InterfaceData interfaceData;
+        LPS28DFW_W1_InterfaceData interfaceData;
 
         // Place to store mode config values
         lps28dfw_md_t modeConfig;
