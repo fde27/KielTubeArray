@@ -14,7 +14,7 @@
 
 uint8_t i2cAddress = LPS28DFW_I2C_ADDRESS_DEFAULT; // 0x5C
 uint8_t multi_addr[] = {0x70, 0x75, 0x72, 0x70, 0x71, 0x72, 0x70, 0x71};
-uint8_t num_sens[] = {8, 8, 6, 8, 8, 6, 8, 8};
+uint8_t num_sens[] = {8, 8, 6, 8, 8, 8, 8, 8};
 
 LPS28DFW pressureSensor[NUM_SENSORS];
 LPS28DFW_W1 pressureSensor_W1[NUM_SENSORS];
@@ -156,8 +156,8 @@ void setup() {
 
 
 void loop() {
-  for (uint8_t sensor = 0; sensor < num_sens[1]; sensor++) {
-    TCA9548A_W1(sensor, multi_addr[1]);
+  for (uint8_t sensor = 0; sensor < num_sens[4]; sensor++) {
+    TCA9548A_W1(sensor, multi_addr[4]);
     pressureSensor_W1[sensor].getSensorData();
     float reading = pressureSensor_W1[sensor].data.pressure.hpa;
     int reading_int = reading*100;
@@ -165,7 +165,7 @@ void loop() {
     Serial.print("\t");
   }
   Serial.println();
-  delay(1000);
+  delay(50);
 }
 
 
