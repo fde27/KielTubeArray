@@ -7,10 +7,12 @@
 #include <Wire.h>
 #include "SparkFun_LPS28DFW_Arduino_Library.h"
 #include "SparkFun_LPS28DFW_Arduino_Library_Wire1.h"
+#include "SparkFun_LPS28DFW_Arduino_Library_Wire2.h"
 
 // Addresses of the multiplexer for each I2C bus (manually selectable with 0 ohm resistors A0, A1, A2)
 #define NUM_MULTI (3)
 #define NUM_SENSORS (24)
+#define NUM_SENSORS_BUS3 (16)
 
 uint8_t i2cAddress = LPS28DFW_I2C_ADDRESS_DEFAULT; // 0x5C
 uint8_t multi_addr[] = {0x70, 0x75, 0x72, 0x70, 0x71, 0x72, 0x70, 0x71};
@@ -18,6 +20,7 @@ uint8_t num_sens[] = {8, 8, 6, 8, 8, 8, 8, 8};
 
 LPS28DFW pressureSensor[NUM_SENSORS];
 LPS28DFW_W1 pressureSensor_W1[NUM_SENSORS];
+LPS28DFW_W2 pressureSensor_W2[NUM_SENSORS_BUS3];
 
 // Select desired sensor (1st I2C bus)
 void TCA9548A(uint8_t bus, uint8_t multiplexer){
@@ -33,6 +36,13 @@ void TCA9548A_W1(uint8_t bus, uint8_t multiplexer){
   Wire1.endTransmission();
 }
 
+// Select desired sensor (3rd I2C bus)
+void TCA9548A_W2(uint8_t bus, uint8_t multiplexer){
+  Wire2.beginTransmission(multiplexer);  
+  Wire2.write(1 << bus);          
+  Wire2.endTransmission();
+}
+
 
 // Set to default state
 void TCA9548A_DEFAULT(uint8_t multiplexer){
@@ -46,6 +56,13 @@ void TCA9548A_W1_DEFAULT(uint8_t multiplexer){
   Wire1.beginTransmission(multiplexer);  // Multiplexer address on the I2C bus
   Wire1.write(0);         
   Wire1.endTransmission();
+}
+
+// Set to default state (Wire2)
+void TCA9548A_W2_DEFAULT(uint8_t multiplexer){
+  Wire2.beginTransmission(multiplexer);  // Multiplexer address on the I2C bus
+  Wire2.write(0);         
+  Wire2.endTransmission();
 }
 
 
@@ -149,6 +166,41 @@ void setup() {
   Serial.println("");
   offset += num_sens[multi];              // Used to keep track of pressureSensor instances
   }
+
+  // Setup sensors on third bus
+  offset = 0;
+  Serial.println();
+  Serial.println("Third I2C Bus:");
+  for (uint8_t multi = 6; multi < (NUM_MULTI + 5); multi++) {  // Cycle through multiplexers on bus
+    Serial.print("Reference pressures (");
+    Serial.print(multi);
+    Serial.println("):");
+
+    for (uint8_t sensor = 0; sensor < num_sens[multi]; sensor++) {  // Cycle through sensors on multiplexer
+      // Select sensor
+      TCA9548A_W2(sensor, multi_addr[multi]);
+      delay(5);
+
+      // Set config
+      pressureSensor_W2[sensor+offset].setModeConfig(&modeConfig);
+      pressureSensor_W2[sensor+offset].setReferenceMode(&refConfig);
+
+      // Get reference pressure
+      pressureSensor_W2[sensor+offset].getReferencePressure(&refPressureRaw);
+      float refPressureHPa = (refPressureRaw / 16.0)*100; // Divide by 16 in 1260hPa range, convert to Pa
+
+      // Print ref. pressure
+      Serial.print("Sensor: ");
+      Serial.print(sensor+offset);
+      Serial.print(": ");
+      Serial.print(refPressureHPa);
+      Serial.print("   ");
+
+      TCA9548A_W2_DEFAULT(multi_addr[multi]);   // Deactivate all sensors on multiplexer
+    }
+  Serial.println("");
+  offset += num_sens[multi];              // Used to keep track of pressureSensor instances
+  }
   
 
   Serial.println("Done setting up");
@@ -156,10 +208,10 @@ void setup() {
 
 
 void loop() {
-  for (uint8_t sensor = 0; sensor < num_sens[4]; sensor++) {
-    TCA9548A_W1(sensor, multi_addr[4]);
-    pressureSensor_W1[sensor].getSensorData();
-    float reading = pressureSensor_W1[sensor].data.pressure.hpa;
+  for (uint8_t sensor = 0; sensor < num_sens[6]; sensor++) {
+    TCA9548A_W2(sensor, multi_addr[6]);
+    pressureSensor_W2[sensor].getSensorData();
+    float reading = pressureSensor_W2[sensor].data.pressure.hpa;
     int reading_int = reading*100;
     Serial.print(reading_int);
     Serial.print("\t");
