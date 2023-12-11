@@ -5,6 +5,8 @@
 
 // Libraries needed
 #include <Wire.h>
+#include <SD.h>
+#include <SPI.h>
 #include "SparkFun_LPS28DFW_Arduino_Library.h"
 #include "SparkFun_LPS28DFW_Arduino_Library_Wire1.h"
 #include "SparkFun_LPS28DFW_Arduino_Library_Wire2.h"
@@ -14,9 +16,14 @@
 #define NUM_SENSORS (24)
 #define NUM_SENSORS_BUS3 (16)
 
-uint8_t i2cAddress = LPS28DFW_I2C_ADDRESS_DEFAULT; // 0x5C
-uint8_t multi_addr[] = {0x70, 0x75, 0x72, 0x70, 0x71, 0x72, 0x70, 0x71};
-uint8_t num_sens[] = {8, 8, 6, 8, 8, 8, 8, 8};
+const uint8_t i2cAddress = LPS28DFW_I2C_ADDRESS_DEFAULT; // 0x5C
+const int chipSelect = BUILTIN_SDCARD; // SD card
+const uint8_t multi_addr[] = {0x70, 0x75, 0x72, 0x70, 0x71, 0x72, 0x70, 0x71};
+const uint8_t num_sens[] = {8, 8, 6, 8, 8, 8, 8, 8};
+int fileNumber = 0;
+unsigned long timeSinceStart;
+
+
 
 LPS28DFW pressureSensor[NUM_SENSORS];
 LPS28DFW_W1 pressureSensor_W1[NUM_SENSORS];
@@ -68,9 +75,19 @@ void TCA9548A_W2_DEFAULT(uint8_t multiplexer){
 
 
 void setup() {
+  // Start serial
   Serial.begin(115200);
   while (!Serial);
   Serial.println("Serial started");
+
+  // Initialise SD card
+  if (!SD.begin(chipSelect)) {
+  Serial.println("Card failed, or not present");
+  while (1) {
+    // No SD card, so don't do anything more - stay stuck here
+  }
+}
+Serial.println("card initialized.");
 
   // Start I2C buses
   Wire.begin();
@@ -100,7 +117,7 @@ void setup() {
   // Setup sensors on first bus
   uint8_t offset = 0;
   int16_t refPressureRaw = 0;
-  for (uint8_t multi = 0; multi < NUM_MULTI; multi++) {  // Cycle through multiplexers on bus
+  for (uint8_t multi = 0; multi < 3; multi++) {  // Cycle through multiplexers on bus
     Serial.print("Reference pressures (");
     Serial.print(multi);
     Serial.println("):");
@@ -136,7 +153,7 @@ void setup() {
   offset = 0;
   Serial.println();
   Serial.println("Second I2C Bus:");
-  for (uint8_t multi = 3; multi < (NUM_MULTI + 3); multi++) {  // Cycle through multiplexers on bus
+  for (uint8_t multi = 3; multi < 6; multi++) {  // Cycle through multiplexers on bus
     Serial.print("Reference pressures (");
     Serial.print(multi);
     Serial.println("):");
@@ -171,7 +188,7 @@ void setup() {
   offset = 0;
   Serial.println();
   Serial.println("Third I2C Bus:");
-  for (uint8_t multi = 6; multi < (NUM_MULTI + 5); multi++) {  // Cycle through multiplexers on bus
+  for (uint8_t multi = 6; multi < (8); multi++) {  // Cycle through multiplexers on bus
     Serial.print("Reference pressures (");
     Serial.print(multi);
     Serial.println("):");
@@ -201,72 +218,107 @@ void setup() {
   Serial.println("");
   offset += num_sens[multi];              // Used to keep track of pressureSensor instances
   }
-  
-
   Serial.println("Done setting up");
 }
 
 
 void loop() {
-  for (uint8_t sensor = 0; sensor < num_sens[6]; sensor++) {
-    TCA9548A_W2(sensor, multi_addr[6]);
-    pressureSensor_W2[sensor].getSensorData();
-    float reading = pressureSensor_W2[sensor].data.pressure.hpa;
-    int reading_int = reading*100;
-    Serial.print(reading_int);
-    Serial.print("\t");
+  // String containing data
+  String dataString = "";
+  timeSinceStart = millis();
+  dataString += String(timeSinceStart) + ',';
+
+  for (uint8_t multi = 0; multi < 3; multi++) {  // Cycle through multiplexers on bus
+      for (uint8_t sensor = 0; sensor < num_sens[multi]; sensor++) {
+        TCA9548A(sensor, multi_addr[multi]);
+        pressureSensor[sensor].getSensorData();
+        float reading = pressureSensor[sensor].data.pressure.hpa;
+        int reading_int = reading*100;
+        dataString += String(reading_int) + ',';
+      }
+      TCA9548A_DEFAULT(multi_addr[multi]); 
+    }
+
+  for (uint8_t multi = 3; multi < 6; multi++) {  // Cycle through multiplexers on bus
+    for (uint8_t sensor = 0; sensor < num_sens[multi]; sensor++) {
+      TCA9548A_W1(sensor, multi_addr[multi]);
+      pressureSensor_W1[sensor].getSensorData();
+      float reading = pressureSensor_W1[sensor].data.pressure.hpa;
+      int reading_int = reading*100;
+      dataString += String(reading_int) + ',';
+      TCA9548A_W1_DEFAULT(multi_addr[multi]); 
+    }
   }
-  Serial.println();
-  delay(50);
+
+  for (uint8_t multi = 6; multi < 8; multi++) {  // Cycle through multiplexers on bus
+    for (uint8_t sensor = 0; sensor < num_sens[multi]; sensor++) {
+      TCA9548A_W2(sensor, multi_addr[multi]);
+      pressureSensor_W2[sensor].getSensorData();
+      float reading = pressureSensor_W2[sensor].data.pressure.hpa;
+      int reading_int = reading*100;
+      dataString += String(reading_int);
+      if (!(multi == 7 && sensor == 7)){
+        dataString += ',';
+      }
+    TCA9548A_W2_DEFAULT(multi_addr[multi]); 
+    }
+  }
+
+  // open the file. note that only one file can be open at a time,
+  // so you have to close this one before opening another.
+  File dataFile = SD.open("datalog.txt", FILE_WRITE);
+
+  // if the file is available, write to it:
+  if (dataFile) {
+    dataFile.println(dataString);
+    dataFile.close();
+    // print to the serial port too:
+    Serial.println(dataString);
+  }
+  // if the file isn't open, pop up an error:
+  else {
+    Serial.println("error opening datalog.txt");
+  }
+}
 }
 
 
 
+// for (uint8_t multi = 0; multi < 1; multi++) {  // Cycle through multiplexers on bus
+//     for (uint8_t sensor = 0; sensor < num_sens[multi]; sensor++) {
+//       TCA9548A(sensor, multi_addr[multi]);
+//       pressureSensor[sensor].getSensorData();
+//       float reading = pressureSensor[sensor].data.pressure.hpa;
+//       int reading_int = reading*100;
+//       dataString += String(reading_int) + ',';
+//     }
+//     TCA9548A_DEFAULT(multi_addr[multi]); 
+//   }
+//   for (uint8_t multi = 3; multi < 4; multi++) {  // Cycle through multiplexers on bus
+//     for (uint8_t sensor = 0; sensor < num_sens[multi]; sensor++) {
+//       TCA9548A_W1(sensor, multi_addr[multi]);
+//       pressureSensor_W1[sensor].getSensorData();
+//       float reading = pressureSensor_W1[sensor].data.pressure.hpa;
+//       int reading_int = reading*100;
+//       dataString += String(reading_int) + ',';
+//       TCA9548A_DEFAULT(multi_addr[multi]); 
+//     }
+//   }
+//   for (uint8_t multi = 6; multi < 7; multi++) {  // Cycle through multiplexers on bus
+//     for (uint8_t sensor = 0; sensor < num_sens[multi]; sensor++) {
+//       TCA9548A_W2(sensor, multi_addr[multi]);
+//       pressureSensor_W2[sensor].getSensorData();
+//       float reading = pressureSensor_W2[sensor].data.pressure.hpa;
+//       int reading_int = reading*100;
+//       dataString += String(reading_int);
+//       if (!(multi == 7 && sensor == 7)){
+//         dataString += ',';
+//       }
+//     TCA9548A_DEFAULT(multi_addr[multi]); 
+//     }
+//   }
 
 
 
 
 
-
-
-
-
-void scanI2C() {
-    byte error, address;
-    int deviceCount = 0;
-
-    Serial.println("Scanning...");
-
-    for (address = 1; address < 127; address++) {
-        Wire.beginTransmission(address);
-        error = Wire.endTransmission();
-
-        if (error == 0) {
-            Serial.print("I2C device found at address 0x");
-            if (address < 16) Serial.print("0");
-            Serial.print(address, HEX);
-            Serial.println(" !");
-            deviceCount++;
-        } else if (error == 4) {
-            Serial.print("Unknown error at address 0x");
-            if (address < 16) Serial.print("0");
-            Serial.println(address, HEX);
-        }
-    }
-
-    if (deviceCount == 0) {
-        Serial.println("No I2C devices found.");
-    } else {
-        Serial.println("Scan complete.");
-    }
-}
-
-
-
-
-// // Select desired sensor (3rd I2C bus)
-// void TCA9548A3(uint8_t bus, uint8_t multiplexer){
-//   Wire2.beginTransmission(multiplexer);  
-//   Wire2.write(1 << bus);          
-//   Wire2.endTransmission();
-// }
