@@ -1,6 +1,6 @@
 // Kiel Tube Array code (for the teensy 4.1)
 // Ferdinand Defregger
-// 27/11/23
+// 12/12/23
 
 
 // Libraries needed
@@ -82,12 +82,24 @@ void setup() {
 
   // Initialise SD card
   if (!SD.begin(chipSelect)) {
-  Serial.println("Card failed, or not present");
-  while (1) {
-    // No SD card, so don't do anything more - stay stuck here
+    Serial.println("Card failed, or not present");
+    while (1) {
+      // No SD card, so don't do anything more - stay stuck here
+    }
   }
-}
-Serial.println("card initialized.");
+  Serial.println("card initialized.");
+
+  // Check for existing file and increment file number if it exists
+  String fileName = "";
+  while (true) {
+    fileName = "data" + String(fileNumber) + ".txt";
+    if (!SD.exists(fileName.c_str())) {
+      break;
+    }
+    fileNumber++;
+  }
+  Serial.print("Available fileName: ");
+  Serial.println(fileName);
 
   // Start I2C buses
   Wire.begin();
@@ -266,7 +278,8 @@ void loop() {
 
   // open the file. note that only one file can be open at a time,
   // so you have to close this one before opening another.
-  File dataFile = SD.open("datalog.txt", FILE_WRITE);
+  String fileName = "data" + String(fileNumber) + ".txt";
+  File dataFile = SD.open(fileName.c_str(), FILE_WRITE);
 
   // if the file is available, write to it:
   if (dataFile) {
@@ -280,45 +293,4 @@ void loop() {
     Serial.println("error opening datalog.txt");
   }
 }
-}
-
-
-
-// for (uint8_t multi = 0; multi < 1; multi++) {  // Cycle through multiplexers on bus
-//     for (uint8_t sensor = 0; sensor < num_sens[multi]; sensor++) {
-//       TCA9548A(sensor, multi_addr[multi]);
-//       pressureSensor[sensor].getSensorData();
-//       float reading = pressureSensor[sensor].data.pressure.hpa;
-//       int reading_int = reading*100;
-//       dataString += String(reading_int) + ',';
-//     }
-//     TCA9548A_DEFAULT(multi_addr[multi]); 
-//   }
-//   for (uint8_t multi = 3; multi < 4; multi++) {  // Cycle through multiplexers on bus
-//     for (uint8_t sensor = 0; sensor < num_sens[multi]; sensor++) {
-//       TCA9548A_W1(sensor, multi_addr[multi]);
-//       pressureSensor_W1[sensor].getSensorData();
-//       float reading = pressureSensor_W1[sensor].data.pressure.hpa;
-//       int reading_int = reading*100;
-//       dataString += String(reading_int) + ',';
-//       TCA9548A_DEFAULT(multi_addr[multi]); 
-//     }
-//   }
-//   for (uint8_t multi = 6; multi < 7; multi++) {  // Cycle through multiplexers on bus
-//     for (uint8_t sensor = 0; sensor < num_sens[multi]; sensor++) {
-//       TCA9548A_W2(sensor, multi_addr[multi]);
-//       pressureSensor_W2[sensor].getSensorData();
-//       float reading = pressureSensor_W2[sensor].data.pressure.hpa;
-//       int reading_int = reading*100;
-//       dataString += String(reading_int);
-//       if (!(multi == 7 && sensor == 7)){
-//         dataString += ',';
-//       }
-//     TCA9548A_DEFAULT(multi_addr[multi]); 
-//     }
-//   }
-
-
-
-
 
